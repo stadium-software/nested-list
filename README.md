@@ -15,71 +15,87 @@ Initial 1.0
 ## Global Script
 1. Create a Global Script called "NestedList"
 2. Add the input parameters below to the Global Script
-   1. classname
-   2. collapsed
-   3. data
+   1. Classname
+   2. Collapsed
+   3. Data
 3. Drag a *JavaScript* action into the script
 4. Add the Javascript below into the JavaScript code property
 ```javascript
 /* Stadium Script v1.0 https://github.com/stadium-software/nested-list */
-let arrTree = ~.Parameters.Input.data;
-let collaps = ~.Parameters.Input.collapsed;
-let className = ~.Parameters.Input.classname;
+let arrTree = ~.Parameters.Input.Data;
+let collaps = ~.Parameters.Input.Collapsed;
+let className = ~.Parameters.Input.Classname;
 if (!className) { 
     console.error("The classname property is required");
     return false;
 }
-let tree = document.querySelectorAll("." + ~.Parameters.Input.classname);
-if (tree.length == 0) {
+let container = document.querySelectorAll("." + className);
+if (container.length == 0) {
     console.error("No control with the class '" + className + "' was found");
     return false;
-} else if (tree.length > 1) {
+} else if (container.length > 1) {
     console.error("The class '" + className + "' is assigned to more than one control");
     return false;
 } else { 
-    tree = tree[0];
+    container = container[0];
 }
-tree.classList.add("stadium-nested-list");
-displayNested(tree, arrTree);
-function displayNested(container, data) {
-    data?.forEach(({ label, classname, url, collapsed, children }) => {
-        let node;
-        if (children) {
-            node = createParent(label, collapsed);
-        } else {
-            node = createChild(label, url, classname);
+container.classList.add("stadium-nested-list");
+for (let i = 0; i < arrTree.length; i++) {
+    let parent = createParent(arrTree[i].label, arrTree[i].collapsed);
+    container.appendChild(parent);
+    displayNested(arrTree[i].children, parent);
+}
+function displayNested(data, parent) {
+    if (data) {
+        for (let i = 0; i < data.length; i++) {
+            if (data[i].children) {
+                let grandParent = parent;
+                parent = createParent(data[i].label, data[i].collapsed);
+                grandParent.querySelector(".child-wrapper").appendChild(parent);
+            } else {
+                let node = createChild(data[i].label, data[i].url, data[i].classname);
+                parent.querySelector(".child-wrapper").appendChild(node);
+            }
+            displayNested(data[i].children, parent);
         }
-        container.appendChild(node);
-        displayNested(node, children);
-    });
+    }
 }
 function createParent(name, coll) {
-    let div = createTag("div", []);
-    let input = createTag("input", []);
-    input.setAttribute("type", "checkbox");
+    let div = createTag("div", ["parent"]);
+    let wrapper = createTag("div", ["wrapper"]);
+    let inner = createTag("div", ["child-wrapper"]);
+    let input = createTag("input", ["hideme"], [{ name: "type", value: "checkbox" }]);
     if (!collaps && !coll) input.setAttribute("checked", "checked");
     let id = makeId(6);
     input.id = id;
-    let label = createTag("label", []);
-    label.setAttribute("for", id);
+    let label = createTag("label", [], [{ name: "for", value: id }]);
     label.textContent = name;
     div.appendChild(label);
     div.appendChild(input);
+    wrapper.appendChild(inner);
+    div.appendChild(wrapper);
     return div;
 }
 function createChild(name, url, className) {
-    let div = createTag("div", []);
-    let a = createTag("a", []);
+    let div = createTag("div", ["child"]);
+    let a = createTag("a", ["nested-list-icon", className], [{name: "target", value:"_blank"}]);
     if (url) a.setAttribute("href", url);
-    a.setAttribute("target", "_blank");
-    a.classList.add(className, "nested-list-icon");
     a.textContent = name;
     div.appendChild(a);
     return div;
 }
-function createTag(type, arrClasses) {
+function createTag(type, arrClasses, arrAttributes) {
     let el = document.createElement(type);
-    if (arrClasses.length > 0) el.classList.add(arrClasses.join(" "));
+    if (arrClasses && arrClasses.length > 0) {
+        arrClasses = arrClasses.filter(function( element ) { return element !== undefined; });
+        let cl = el.classList;
+        cl.add.apply(cl, arrClasses);
+    }
+    if (arrAttributes && arrAttributes.length > 0) { 
+        for (let i = 0; i < arrAttributes.length; i++) { 
+            if (arrAttributes[i].name) el.setAttribute(arrAttributes[i].name, arrAttributes[i].value);
+        }
+    }
     return el;
 }
 function makeId(length) {
@@ -100,23 +116,24 @@ function makeId(length) {
 
 ## Page.Load
 1. Add a *List* action to the event handler (type: Any)
-2. Populate the *List* with lists of **parent** and **child** objects that represent hierarchical data
+2. Populate the *List* with lists of **parent** and **child** objects that represent hierarchical data (see example below)
 3. Drag the "NestedList" script into the event handler and complete the input parameters
-   1. classname: The unique classname you added to the *Container* control
-   2. collapsed: A boolean indicating whether all elements should initially be collapsed (you can collapse individual nodes as shown below). By default all nodes are shown expanded
-   3. data: The *List* of hierarchical objects
+   1. Classname: The unique classname you added to the *Container* control (e.g. nested-list)
+   2. Collapsed: By default all nodes are shown expanded when the list loads. Add "false" to show them collapsed
+   3. Data: The *List* of hierarchical objects
 
-### Parent Object Properties
+### Hierarchical List Data
+
+**Parent Object Properties**
 1. label (required): A string that will be displayed in the node
-2. collapsed (boolean): Optionally, add a boolean if you wish for a node initially be shown collapsed
+2. collapsed (boolean): Optionally, add a boolean on a node to show it collapsed
 
-### Child Object Properties
+**Child Object Properties**
 1. label (required): A string that will be displayed in the node
 2. classname (string): Optionally provide a classname to attach to the node
 3. url (string): Optionally provide a url to attach to the node
 
 **List Example Data**
-
 ```javascript
 [
     {
@@ -163,19 +180,19 @@ function makeId(length) {
     {
         label: "PARENT5",
         children: [
-            { label: "child1", classname: "file", url: "https://www.google.com" },
-            { label: "child2", classname: "file", url: "https://www.google.com" },
-            { label: "child3", classname: "email", url: "https://www.google.com" },
-            { label: "child4", classname: "meeting", url: "https://www.google.com" },
-            { label: "child5", classname: "file", url: "https://www.google.com" },
+            { label: "child5.1", classname: "file", url: "https://www.google.com" },
+            { label: "child5.2", classname: "file", url: "https://www.google.com" },
+            { label: "child5.3", classname: "email", url: "https://www.google.com" },
+            { label: "child5.4", classname: "meeting", url: "https://www.google.com" },
+            { label: "child5.5", classname: "file", url: "https://www.google.com" },
             {
                 label: "PARENT6",
                 children: [
-                    { label: "child1", classname: "file", url: "https://www.google.com" },
-                    { label: "child2", classname: "file", url: "https://www.google.com" },
-                    { label: "child3", classname: "email", url: "https://www.google.com" },
-                    { label: "child4", classname: "meeting", url: "https://www.google.com" },
-                    { label: "child5", classname: "file", url: "https://www.google.com" },
+                    { label: "child6.1", classname: "file", url: "https://www.google.com" },
+                    { label: "child6.2", classname: "file", url: "https://www.google.com" },
+                    { label: "child6.3", classname: "email", url: "https://www.google.com" },
+                    { label: "child6.4", classname: "meeting", url: "https://www.google.com" },
+                    { label: "child6.5", classname: "file", url: "https://www.google.com" },
                 ],
             },
         ],
@@ -184,7 +201,7 @@ function makeId(length) {
 ```
 
 ## Custom CSS
-Add CSS for the attached classes into the stylesheet. below are some examples as to how to display icons for the classes added in the example data above
+Optionally, add CSS for the classes in the "classname" property to the stylesheet to style node types. Below are some examples as to how to display icons
 
 ```css
 .file {
