@@ -12,6 +12,9 @@
         overflow: hidden;
         transition: grid-template-rows var(--nested-list-animation-speed, 250ms) ease-out;
         padding-left: var(--nested-list-item-indent, 3rem);
+        > .child-wrapper > .child {
+            padding-left: 0;
+        }
     }
     .child {
         padding-left: var(--nested-list-item-indent, 3rem);

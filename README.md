@@ -9,7 +9,7 @@ Initial 1.0
 
 1.0.1 Updated readme for 6.12+; converted px to rem
 
-1.1 Enabled list updates; fixed empty classname bug
+1.1 Enabled list updates; fixed empty classname bug; adjusted chld indent display
 
 # Setup
 
