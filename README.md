@@ -9,6 +9,8 @@ Initial 1.0
 
 1.0.1 Updated readme for 6.12+; converted px to rem
 
+1.1 Enabled list updates; fixed empty classname bug
+
 # Setup
 
 ## Application Setup
@@ -23,7 +25,7 @@ Initial 1.0
 3. Drag a *JavaScript* action into the script
 4. Add the Javascript below unchanged into the JavaScript code property
 ```javascript
-/* Stadium Script v1.0 https://github.com/stadium-software/nested-list */
+/* Stadium Script v1.1 https://github.com/stadium-software/nested-list */
 let arrTree = ~.Parameters.Input.Data;
 let collaps = ~.Parameters.Input.Collapsed;
 let className = ~.Parameters.Input.Classname;
@@ -42,6 +44,9 @@ if (container.length == 0) {
     container = container[0];
 }
 container.classList.add("stadium-nested-list");
+if (container.children.length > 0) {
+    container.innerHTML = "";
+}
 for (let i = 0; i < arrTree.length; i++) {
     let parent = createParent(arrTree[i].label, arrTree[i].collapsed);
     container.appendChild(parent);
@@ -89,7 +94,9 @@ function createChild(name, url, className) {
 function createTag(type, arrClasses, arrAttributes) {
     let el = document.createElement(type);
     if (arrClasses && arrClasses.length > 0) {
-        arrClasses = arrClasses.filter(function( element ) { return element !== undefined; });
+        arrClasses = arrClasses.filter(function (e) {
+            return e;
+        });
         let cl = el.classList;
         cl.add.apply(cl, arrClasses);
     }
